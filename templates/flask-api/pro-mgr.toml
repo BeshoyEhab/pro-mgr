@@ -1,0 +1,22 @@
+[project]
+name = "{{name}}"
+version = "0.1.0"
+description = "A Flask API application"
+
+[tasks.serve]
+command = "flask --app {{name_underscore}}.app run --debug"
+description = "Start development server"
+watch_dirs = ["{{name_underscore}}/"]
+
+[tasks.test]
+command = "python -m pytest tests/ -v"
+description = "Run tests"
+watch_dirs = ["{{name_underscore}}/", "tests/"]
+
+[tasks.lint]
+command = "python -m flake8 {{name_underscore}}/"
+description = "Run linter"
+
+[tasks.install]
+command = "pip install -r requirements.txt"
+description = "Install dependencies"

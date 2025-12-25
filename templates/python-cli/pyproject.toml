@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "{{name}}"
+version = "0.1.0"
+description = "A Python CLI project"
+requires-python = ">=3.8"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0.0", "flake8"]
+
+[tool.setuptools.packages.find]
+where = ["."]

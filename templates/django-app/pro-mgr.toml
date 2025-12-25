@@ -1,0 +1,29 @@
+[project]
+name = "{{name_underscore}}"
+version = "0.1.0"
+description = "A Django web application"
+
+[tasks.runserver]
+command = "python manage.py runserver"
+description = "Start development server"
+watch_dirs = ["{{name_underscore}}/"]
+
+[tasks.migrate]
+command = "python manage.py migrate"
+description = "Run database migrations"
+
+[tasks.makemigrations]
+command = "python manage.py makemigrations"
+description = "Create new migrations"
+
+[tasks.test]
+command = "python manage.py test"
+description = "Run tests"
+
+[tasks.shell]
+command = "python manage.py shell"
+description = "Open Django shell"
+
+[tasks.install]
+command = "pip install -r requirements.txt"
+description = "Install dependencies"

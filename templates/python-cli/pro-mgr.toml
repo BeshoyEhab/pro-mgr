@@ -1,0 +1,21 @@
+[project]
+name = "{{name}}"
+version = "0.1.0"
+description = "A Python CLI project"
+
+[tasks.test]
+command = "python -m pytest tests/ -v"
+description = "Run tests"
+watch_dirs = ["{{name_underscore}}/", "tests/"]
+
+[tasks.lint]
+command = "python -m flake8 {{name_underscore}}/"
+description = "Run linter"
+
+[tasks.run]
+command = "python -m {{name_underscore}}.main"
+description = "Run the application"
+
+[tasks.install]
+command = "pip install -r requirements.txt"
+description = "Install dependencies"
