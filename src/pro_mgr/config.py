@@ -219,3 +219,25 @@ def get_project_metadata(config: Dict[str, Any]) -> Dict[str, Any]:
     }
     project = config.get('project', {})
     return {**defaults, **project}
+
+
+def get_dotfiles_config(config: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Get dotfiles integration configuration.
+    
+    Used for dot-man integration to automatically switch
+    dotfile branches when activating a project shell.
+    
+    Args:
+        config: Parsed configuration dictionary
+    
+    Returns:
+        Dotfiles config dict with defaults:
+        - branch: dot-man branch to switch to (default: None)
+        - auto_switch: whether to auto-switch on shell activation (default: False)
+    """
+    defaults = {
+        'branch': None,
+        'auto_switch': False,
+    }
+    return {**defaults, **config.get('dotfiles', {})}

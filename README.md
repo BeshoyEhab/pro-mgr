@@ -110,6 +110,19 @@ depends_on = ["test"]        # Run tests first
 
 [tasks.lint]
 command = "npm run lint"     # Works with any language!
+
+[dotfiles]
+branch = "work"              # Switch dot-man branch
+auto_switch = true           # Auto-switch on shell activation
+```
+
+### 🔌 Dot-Man Integration
+
+Integrate with [dot-man](https://github.com/BeshoyEhab/dot-man) to automatically switch dotfiles when working on a project:
+
+```bash
+# Activation switches dotfiles to "work" branch if configured
+eval $(pro-mgr shell my-work-project)
 ```
 
 ---

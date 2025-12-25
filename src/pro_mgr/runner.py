@@ -249,6 +249,8 @@ def get_shell_activation_command(project_name: str) -> str:
     Returns:
         Shell command string for eval
     """
+    import shutil
+    
     project = db.get_project(project_name)
     if not project:
         raise RunnerError(f"Project not found: {project_name}")
@@ -271,5 +273,18 @@ def get_shell_activation_command(project_name: str) -> str:
         
         if activate_script.exists():
             commands.append(f'source "{activate_script}"')
+    
+    # Switch dot-man branch if configured
+    try:
+        proj_config = config.load_config(project_path)
+        dotfiles = config.get_dotfiles_config(proj_config)
+        if dotfiles.get('auto_switch') and dotfiles.get('branch'):
+            # Check if dot-man is installed
+            if shutil.which('dot-man'):
+                branch = dotfiles['branch']
+                # Use --force for non-interactive, redirect stderr to avoid noise
+                commands.append(f'dot-man switch "{branch}" --force 2>/dev/null || true')
+    except FileNotFoundError:
+        pass  # No config file, skip dotfiles integration
     
     return "; ".join(commands)
