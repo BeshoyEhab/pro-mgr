@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pro-mgr"
-version = "0.1.0"
+version = "0.2.0"
 description = "A command-line tool to manage multiple projects from anywhere"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"
 authors = [
-    {name = "Pro-Mgr Team"}
+    {name = "Bishoy Ehab"}
 ]
 keywords = ["cli", "project-management", "developer-tools"]
 classifiers = [
@@ -44,8 +44,8 @@ dev = [
 pro-mgr = "pro_mgr.cli:cli"
 
 [project.urls]
-Homepage = "https://github.com/username/pro-mgr"
-Repository = "https://github.com/username/pro-mgr.git"
+Homepage = "https://github.com/BeshoyEhab/pro-mgr"
+Repository = "https://github.com/BeshoyEhab/pro-mgr.git"
 
 [tool.setuptools.packages.find]
 where = ["src"]
