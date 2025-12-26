@@ -23,6 +23,47 @@ class TemplateNotFoundError(ScaffoldError):
     pass
 
 
+def get_default_variables() -> dict:
+    """
+    Get default template variables from user config or environment.
+    
+    Reads from ~/.pro-mgr/config.toml if exists, otherwise uses defaults.
+    
+    Returns:
+        Dict with default values for author, email, license, etc.
+    """
+    import os
+    import getpass
+    
+    defaults = {
+        'author': getpass.getuser(),
+        'email': '',
+        'license': 'MIT',
+        'description': '',
+        'python_version': '3.10',
+    }
+    
+    # Try to load from config file
+    config_path = Path.home() / '.pro-mgr' / 'config.toml'
+    if config_path.exists():
+        try:
+            import toml
+            user_config = toml.load(config_path)
+            defaults.update(user_config.get('defaults', {}))
+        except Exception:
+            pass  # Ignore config errors, use defaults
+    
+    # Override with environment variables
+    if os.environ.get('PRO_MGR_AUTHOR'):
+        defaults['author'] = os.environ['PRO_MGR_AUTHOR']
+    if os.environ.get('PRO_MGR_EMAIL'):
+        defaults['email'] = os.environ['PRO_MGR_EMAIL']
+    if os.environ.get('PRO_MGR_LICENSE'):
+        defaults['license'] = os.environ['PRO_MGR_LICENSE']
+    
+    return defaults
+
+
 def get_templates_dir() -> Path:
     """Get the path to the templates directory."""
     # Templates are in the package directory
@@ -43,7 +84,7 @@ def get_available_templates() -> List[str]:
     return [d.name for d in templates_dir.iterdir() if d.is_dir()]
 
 
-def create_project_structure(name: str, template: str, path: str = ".") -> Path:
+def create_project_structure(name: str, template: str, path: str = ".", variables: dict = None) -> Path:
     """
     Create a new project from a template.
     
@@ -51,6 +92,7 @@ def create_project_structure(name: str, template: str, path: str = ".") -> Path:
         name: Project name
         template: Template name (python-cli, flask-api, django-app)
         path: Parent directory for the project
+        variables: Template variables for substitution
     
     Returns:
         Path to the created project
@@ -76,13 +118,13 @@ def create_project_structure(name: str, template: str, path: str = ".") -> Path:
     
     project_path.mkdir(parents=True)
     
-    # Copy template files
-    _copy_template(template_path, project_path, name)
+    # Copy template files with variables
+    _copy_template(template_path, project_path, name, variables)
     
     return project_path
 
 
-def _copy_template(src: Path, dest: Path, project_name: str) -> None:
+def _copy_template(src: Path, dest: Path, project_name: str, variables: dict = None) -> None:
     """
     Copy template files with variable substitution.
     
@@ -90,7 +132,17 @@ def _copy_template(src: Path, dest: Path, project_name: str) -> None:
         src: Source template directory
         dest: Destination project directory
         project_name: Name to substitute for {{name}} placeholders
+        variables: Additional variables for substitution
     """
+    if variables is None:
+        variables = {}
+    
+    # Build complete variable map
+    var_map = get_default_variables()
+    var_map.update(variables)
+    var_map['name'] = project_name
+    var_map['name_underscore'] = project_name.replace('-', '_')
+    
     for item in src.iterdir():
         dest_name = item.name.replace("{{name}}", project_name)
         dest_path = dest / dest_name
@@ -100,13 +152,14 @@ def _copy_template(src: Path, dest: Path, project_name: str) -> None:
             if item.name == "__name__":
                 dest_path = dest / project_name.replace("-", "_")
             dest_path.mkdir(parents=True, exist_ok=True)
-            _copy_template(item, dest_path, project_name)
+            _copy_template(item, dest_path, project_name, variables)
         else:
             # Copy file with content substitution
             try:
                 content = item.read_text()
-                content = content.replace("{{name}}", project_name)
-                content = content.replace("{{name_underscore}}", project_name.replace("-", "_"))
+                # Replace all variables
+                for key, value in var_map.items():
+                    content = content.replace(f"{{{{{key}}}}}", str(value))
                 dest_path.write_text(content)
             except UnicodeDecodeError:
                 # Binary file, just copy
@@ -322,7 +375,8 @@ def create_project(
     template: str = "python-cli",
     path: str = ".",
     init_git_repo: bool = True,
-    create_venv_env: bool = True
+    create_venv_env: bool = True,
+    variables: dict = None
 ) -> dict:
     """
     Create a complete new project with all initializations.
@@ -333,12 +387,13 @@ def create_project(
         path: Parent directory
         init_git_repo: Whether to initialize git
         create_venv_env: Whether to create venv
+        variables: Template variables for substitution
     
     Returns:
         Dict with project info (path, venv_path, git_initialized)
     """
-    # Create project structure
-    project_path = create_project_structure(name, template, path)
+    # Create project structure with variables
+    project_path = create_project_structure(name, template, path, variables)
     
     result = {
         'name': name,

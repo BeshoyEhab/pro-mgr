@@ -60,6 +60,15 @@ CREATE TABLE snippets (
 
 ## Key Interfaces
 
+### cli.py
+
+- `new` - Create project from template with `--author`, `--license`, `--description`
+- `init` - Initialize pro-mgr.toml in existing project (auto-detects type)
+- `run` - Execute task for a project with optional `--watch`
+- `shell` - Print shell activation command (Fish-compatible)
+- `project` - Subcommands: list, info, add, rm, update
+- `snip` - Subcommands: add, ls, search, show, edit, rm
+
 ### db.py
 
 - `add_project(name, root_path, venv_path, description, tags)`
@@ -76,13 +85,16 @@ CREATE TABLE snippets (
 
 ### scaffold.py
 
-- `create_project(name, template, path, init_git, create_venv)` → dict
+- `create_project(name, template, path, init_git, create_venv, variables)` → dict
 - `get_available_templates()` → list
+- `get_default_variables()` → dict (author, email, license from config/env)
 
 ### runner.py
 
 - `run_task(project_name, task_name, force)` → exit_code
+- `run_single_task(task_config, project_path, env)` → exit_code (supports timeout)
 - `activate_virtualenv(venv_path)` → env dict
+- `detect_shell()` → str (fish, bash, zsh, sh)
 
 ### watcher.py
 
@@ -91,6 +103,43 @@ CREATE TABLE snippets (
 ### tui.py
 
 - `run_tui()` → tuple or None
+
+---
+
+## Template Variables
+
+Templates support these variables (substituted with `{{variable}}`):
+
+| Variable          | Source                                                  |
+| ----------------- | ------------------------------------------------------- |
+| `name`            | Project name                                            |
+| `name_underscore` | Project name with `-` → `_`                             |
+| `author`          | `~/.pro-mgr/config.toml`, `PRO_MGR_AUTHOR` env, or CLI  |
+| `email`           | `~/.pro-mgr/config.toml`, `PRO_MGR_EMAIL` env           |
+| `license`         | `~/.pro-mgr/config.toml`, `PRO_MGR_LICENSE` env, or CLI |
+| `description`     | CLI `--description` option                              |
+
+### User Config Example
+
+```toml
+# ~/.pro-mgr/config.toml
+[defaults]
+author = "Your Name"
+email = "you@example.com"
+license = "MIT"
+```
+
+---
+
+## Task Timeout
+
+Tasks can specify a timeout in seconds:
+
+```toml
+[tasks.test]
+command = "pytest"
+timeout = 300  # 5 minutes
+```
 
 ---
 

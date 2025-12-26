@@ -279,6 +279,7 @@ complete -c pro-mgr -f -a "(_pro_mgr_completion)"
 
 # Manual completions for main commands
 complete -c pro-mgr -n "__fish_use_subcommand" -a "new" -d "Create a new project from template"
+complete -c pro-mgr -n "__fish_use_subcommand" -a "init" -d "Initialize pro-mgr.toml in existing project"
 complete -c pro-mgr -n "__fish_use_subcommand" -a "run" -d "Run a task for a project"
 complete -c pro-mgr -n "__fish_use_subcommand" -a "shell" -d "Print shell activation command"
 complete -c pro-mgr -n "__fish_use_subcommand" -a "project" -d "Manage registered projects"

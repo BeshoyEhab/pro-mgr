@@ -53,17 +53,24 @@ def cli(ctx):
 @click.option("--path", "-p", default=".", help="Directory to create project in")
 @click.option("--no-git", is_flag=True, help="Skip Git initialization")
 @click.option("--no-venv", is_flag=True, help="Skip virtual environment creation")
-def new(name: str, template: str, path: str, no_git: bool, no_venv: bool):
+@click.option("--author", "-a", help="Author name for template")
+@click.option("--license", "-l", "license_", help="License type (MIT, Apache-2.0, GPL-3.0)")
+@click.option("--description", "-d", help="Project description")
+def new(name: str, template: str, path: str, no_git: bool, no_venv: bool,
+        author: Optional[str], license_: Optional[str], description: Optional[str]):
     """
     Create a new project from a template.
+    
+    Template variables can be customized with options or set defaults in
+    ~/.pro-mgr/config.toml under [defaults] section.
     
     Examples:
     
         pro-mgr new my-app
         
-        pro-mgr new my-api --template flask-api
+        pro-mgr new my-api --template flask-api --author "John Doe"
         
-        pro-mgr new my-blog --path ~/projects/
+        pro-mgr new my-blog --path ~/projects/ --license MIT
     """
     try:
         console.print(f"[bold cyan]Creating project:[/] {name}")
@@ -71,12 +78,22 @@ def new(name: str, template: str, path: str, no_git: bool, no_venv: bool):
         console.print(f"  Path: {Path(path).resolve() / name}")
         console.print()
         
+        # Build template variables from options
+        variables = {}
+        if author:
+            variables['author'] = author
+        if license_:
+            variables['license'] = license_
+        if description:
+            variables['description'] = description
+        
         result = scaffold.create_project(
             name=name,
             template=template,
             path=path,
             init_git_repo=not no_git,
             create_venv_env=not no_venv,
+            variables=variables,
         )
         
         console.print("[bold green]✓[/] Project created successfully!")
@@ -106,6 +123,185 @@ def new(name: str, template: str, path: str, no_git: bool, no_venv: bool):
     except Exception as e:
         console.print(f"[bold red]Error:[/] {e}")
         sys.exit(1)
+
+
+# ============== init Command ==============
+
+@cli.command()
+@click.option("--name", "-n", help="Project name (default: directory name)")
+@click.option("--no-register", is_flag=True, help="Don't register in pro-mgr database")
+@click.option("--force", "-f", is_flag=True, help="Overwrite existing pro-mgr.toml")
+def init(name: Optional[str], no_register: bool, force: bool):
+    """
+    Initialize pro-mgr.toml in an existing project.
+    
+    Creates a configuration file in the current directory with
+    common tasks based on detected project type.
+    
+    Examples:
+    
+        cd my-existing-project
+        pro-mgr init
+        
+        pro-mgr init --name my-app
+    """
+    cwd = Path.cwd()
+    config_path = cwd / "pro-mgr.toml"
+    
+    # Check if already exists
+    if config_path.exists() and not force:
+        console.print(f"[bold red]Error:[/] pro-mgr.toml already exists")
+        console.print("[dim]Use --force to overwrite[/]")
+        sys.exit(1)
+    
+    # Determine project name
+    project_name = name or cwd.name
+    
+    console.print(f"[bold cyan]Initializing pro-mgr in:[/] {cwd}")
+    console.print(f"  Project name: {project_name}")
+    console.print()
+    
+    # Detect project type and suggest tasks
+    tasks = _detect_project_tasks(cwd)
+    
+    # Generate config content
+    config_content = _generate_init_config(project_name, tasks)
+    
+    # Write config file
+    config_path.write_text(config_content)
+    console.print(f"[bold green]✓[/] Created pro-mgr.toml")
+    
+    # Detect venv
+    venv_path = scaffold.detect_venv(str(cwd))
+    
+    # Register project unless --no-register
+    if not no_register:
+        if db.project_exists(project_name):
+            console.print(f"[yellow]Note:[/] Project '{project_name}' already registered")
+        else:
+            db.add_project(
+                name=project_name,
+                root_path=str(cwd),
+                venv_path=str(venv_path) if venv_path else None
+            )
+            console.print(f"[bold green]✓[/] Registered project: {project_name}")
+    
+    console.print()
+    console.print("[dim]Next steps:[/]")
+    console.print(f"  Edit pro-mgr.toml to customize tasks")
+    console.print(f"  pro-mgr run {project_name} <task>")
+
+
+def _detect_project_tasks(path: Path) -> dict:
+    """Detect project type and return suggested tasks."""
+    tasks = {}
+    
+    # Python project detection
+    if (path / "pyproject.toml").exists() or (path / "setup.py").exists() or (path / "requirements.txt").exists():
+        tasks["test"] = {
+            "command": "python -m pytest tests/ -v",
+            "description": "Run tests",
+            "watch_dirs": ["src/", "tests/"]
+        }
+        tasks["lint"] = {
+            "command": "python -m flake8 .",
+            "description": "Run linter"
+        }
+        tasks["install"] = {
+            "command": "pip install -r requirements.txt",
+            "description": "Install dependencies"
+        }
+    
+    # Node.js project detection
+    if (path / "package.json").exists():
+        tasks["test"] = {
+            "command": "npm test",
+            "description": "Run tests"
+        }
+        tasks["dev"] = {
+            "command": "npm run dev",
+            "description": "Start development server"
+        }
+        tasks["build"] = {
+            "command": "npm run build",
+            "description": "Build for production"
+        }
+        tasks["install"] = {
+            "command": "npm install",
+            "description": "Install dependencies"
+        }
+    
+    # Go project detection
+    if (path / "go.mod").exists():
+        tasks["test"] = {
+            "command": "go test ./...",
+            "description": "Run tests"
+        }
+        tasks["build"] = {
+            "command": "go build ./...",
+            "description": "Build the project"
+        }
+        tasks["run"] = {
+            "command": "go run .",
+            "description": "Run the application"
+        }
+    
+    # Rust project detection
+    if (path / "Cargo.toml").exists():
+        tasks["test"] = {
+            "command": "cargo test",
+            "description": "Run tests"
+        }
+        tasks["build"] = {
+            "command": "cargo build",
+            "description": "Build the project"
+        }
+        tasks["run"] = {
+            "command": "cargo run",
+            "description": "Run the application"
+        }
+    
+    # Makefile detection
+    if (path / "Makefile").exists():
+        tasks["build"] = {
+            "command": "make",
+            "description": "Build the project"
+        }
+    
+    # Default tasks if nothing detected
+    if not tasks:
+        tasks["test"] = {
+            "command": "echo 'Add your test command here'",
+            "description": "Run tests"
+        }
+        tasks["build"] = {
+            "command": "echo 'Add your build command here'",
+            "description": "Build the project"
+        }
+    
+    return tasks
+
+
+def _generate_init_config(name: str, tasks: dict) -> str:
+    """Generate pro-mgr.toml content."""
+    lines = [
+        "[project]",
+        f'name = "{name}"',
+        'version = "0.1.0"',
+        'description = ""',
+        "",
+    ]
+    
+    for task_name, task_config in tasks.items():
+        lines.append(f"[tasks.{task_name}]")
+        lines.append(f'command = "{task_config["command"]}"')
+        lines.append(f'description = "{task_config["description"]}"')
+        if "watch_dirs" in task_config:
+            watch_str = ", ".join(f'"{d}"' for d in task_config["watch_dirs"])
+            lines.append(f"watch_dirs = [{watch_str}]")
+        lines.append("")
+    
+    return "\n".join(lines)
 
 
 # ============== run Command ==============

@@ -18,7 +18,7 @@ def get_db_path() -> Path:
 
 def get_connection() -> sqlite3.Connection:
     """Get a database connection with row factory."""
-    conn = sqlite3.connect(get_db_path())
+    conn = sqlite3.connect(get_db_path(), timeout=10.0)  # 10 second timeout
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -101,12 +101,13 @@ def get_project(name: str) -> Optional[Dict[str, Any]]:
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM projects WHERE name = ?", (name,))
     row = cursor.fetchone()
-    conn.close()
+    conn.close()  # Close connection BEFORE calling update_project
     
     if row:
-        # Update last_accessed
+        result = dict(row)
+        # Update last_accessed (connection is already closed)
         update_project(name, last_accessed=datetime.now().isoformat())
-        return dict(row)
+        return result
     return None
 
 

@@ -13,6 +13,11 @@
 - [x] Project templates (python-cli, flask-api, django-app)
 - [x] Shared pip cache across projects
 - [x] Package installation
+- [x] `pro-mgr init` command for existing projects
+- [x] Template variables ({{author}}, {{license}}, etc.)
+- [x] Task timeout configuration
+- [x] Fish shell activation fix
+- [x] Shell completions (bash, zsh, fish)
 
 ---
 
@@ -21,10 +26,8 @@
 ### High Priority
 
 - [ ] Add more templates (node-app, rust-cli, go-api)
-- [ ] Template variables for customization
-- [ ] `pro-mgr init` to create pro-mgr.toml in existing projects
 - [ ] Parallel task execution
-- [ ] Task timeout configuration
+- [ ] `pro-mgr config` command to set defaults
 
 ### Medium Priority
 
@@ -37,7 +40,6 @@
 ### Low Priority
 
 - [ ] Plugin system for custom commands
-- [ ] Shell completion scripts (bash, zsh, fish)
 - [ ] Config validation command
 - [ ] Export/import project configurations
 - [ ] Web dashboard (optional)
@@ -46,8 +48,7 @@
 
 ## 🐛 Known Issues
 
-- [ ] Database locking in parallel test runs (use separate test db)
-- [ ] Fish shell activation script differs from bash
+- [ ] Database locking possible in very high concurrency scenarios
 
 ---
 

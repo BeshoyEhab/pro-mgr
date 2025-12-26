@@ -45,6 +45,15 @@ pip install -e .
 pro-mgr new my-app                          # Python CLI template
 pro-mgr new my-api --template flask-api     # Flask API template
 pro-mgr new my-site --template django-app   # Django template
+pro-mgr new my-app --author "John Doe"      # With custom author
+```
+
+### Initialize in existing project
+
+```bash
+cd my-existing-project
+pro-mgr init                                # Auto-detects project type
+pro-mgr init --name my-app                  # With custom name
 ```
 
 ### Run tasks

@@ -24,6 +24,11 @@ class GitDirtyError(RunnerError):
     pass
 
 
+class TaskTimeoutError(RunnerError):
+    """Raised when a task exceeds its configured timeout."""
+    pass
+
+
 def get_shared_cache_dir() -> str:
     """Get the path to the shared pip cache directory."""
     cache_dir = Path.home() / ".pro-mgr" / "pip-cache"
@@ -82,7 +87,12 @@ def check_git_dirty(project_path: str) -> bool:
         return False
 
 
-def execute_command(cmd: str, cwd: str, env: Optional[Dict[str, str]] = None) -> Tuple[int, str, str]:
+def execute_command(
+    cmd: str, 
+    cwd: str, 
+    env: Optional[Dict[str, str]] = None,
+    timeout: Optional[int] = None
+) -> Tuple[int, str, str]:
     """
     Execute a shell command.
     
@@ -90,23 +100,30 @@ def execute_command(cmd: str, cwd: str, env: Optional[Dict[str, str]] = None) ->
         cmd: Command to execute
         cwd: Working directory
         env: Environment variables (optional)
+        timeout: Timeout in seconds (optional)
     
     Returns:
         Tuple of (exit_code, stdout, stderr)
+    
+    Raises:
+        TaskTimeoutError: If command exceeds timeout
     """
     if env is None:
         env = os.environ.copy()
     
-    # Use shell=True for complex commands with pipes, etc.
-    result = subprocess.run(
-        cmd,
-        shell=True,
-        cwd=cwd,
-        env=env,
-        capture_output=False,  # Let output go to terminal
-    )
-    
-    return result.returncode, "", ""
+    try:
+        # Use shell=True for complex commands with pipes, etc.
+        result = subprocess.run(
+            cmd,
+            shell=True,
+            cwd=cwd,
+            env=env,
+            capture_output=False,  # Let output go to terminal
+            timeout=timeout,
+        )
+        return result.returncode, "", ""
+    except subprocess.TimeoutExpired:
+        raise TaskTimeoutError(f"Command timed out after {timeout} seconds")
 
 
 def execute_command_capture(cmd: str, cwd: str, env: Optional[Dict[str, str]] = None) -> Tuple[int, str, str]:
@@ -151,14 +168,18 @@ def run_single_task(
     
     Returns:
         Exit code
+    
+    Raises:
+        TaskTimeoutError: If task exceeds its configured timeout
     """
     command = task_config.get('command', '')
+    timeout = task_config.get('timeout')  # Optional timeout in seconds
     
     # Expand snippets in the command
     command = config.expand_snippets(command)
     
-    # Execute
-    exit_code, _, _ = execute_command(command, project_path, env)
+    # Execute with optional timeout
+    exit_code, _, _ = execute_command(command, project_path, env, timeout=timeout)
     
     return exit_code
 
@@ -239,9 +260,23 @@ def run_task(
     return 0
 
 
+def detect_shell() -> str:
+    """
+    Detect the current shell type.
+    
+    Returns:
+        Shell name: 'fish', 'zsh', 'bash', or 'sh'
+    """
+    shell = os.environ.get('SHELL', '/bin/sh')
+    shell_name = Path(shell).name
+    return shell_name
+
+
 def get_shell_activation_command(project_name: str) -> str:
     """
     Get the shell command to activate a project's environment.
+    
+    Detects the current shell and generates appropriate syntax.
     
     Args:
         project_name: Name of the project
@@ -257,6 +292,8 @@ def get_shell_activation_command(project_name: str) -> str:
     
     project_path = project['root_path']
     venv_path = project.get('venv_path')
+    shell = detect_shell()
+    is_fish = shell == 'fish'
     
     commands = []
     
@@ -269,10 +306,18 @@ def get_shell_activation_command(project_name: str) -> str:
         if platform.system() == "Windows":
             activate_script = venv / "Scripts" / "activate"
         else:
-            activate_script = venv / "bin" / "activate"
+            # Fish uses activate.fish, others use activate
+            if is_fish:
+                activate_script = venv / "bin" / "activate.fish"
+            else:
+                activate_script = venv / "bin" / "activate"
         
         if activate_script.exists():
-            commands.append(f'source "{activate_script}"')
+            if is_fish:
+                # Fish uses 'source' but with .fish file
+                commands.append(f'source "{activate_script}"')
+            else:
+                commands.append(f'source "{activate_script}"')
     
     # Switch dot-man branch if configured
     try:
@@ -283,8 +328,13 @@ def get_shell_activation_command(project_name: str) -> str:
             if shutil.which('dot-man'):
                 branch = dotfiles['branch']
                 # Use --force for non-interactive, redirect stderr to avoid noise
-                commands.append(f'dot-man switch "{branch}" --force 2>/dev/null || true')
+                if is_fish:
+                    commands.append(f'dot-man switch "{branch}" --force 2>/dev/null; or true')
+                else:
+                    commands.append(f'dot-man switch "{branch}" --force 2>/dev/null || true')
     except FileNotFoundError:
         pass  # No config file, skip dotfiles integration
     
-    return "; ".join(commands)
+    # Use appropriate command separator for shell
+    separator = "; " if is_fish else "; "
+    return separator.join(commands)
