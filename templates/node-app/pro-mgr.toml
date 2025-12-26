@@ -1,0 +1,25 @@
+[project]
+name = "{{name}}"
+version = "1.0.0"
+description = "A Node.js application"
+
+[tasks.dev]
+command = "npm run dev"
+description = "Start development server with auto-reload"
+watch_dirs = ["src/"]
+
+[tasks.start]
+command = "npm start"
+description = "Start production server"
+
+[tasks.test]
+command = "npm test"
+description = "Run tests"
+
+[tasks.lint]
+command = "npm run lint"
+description = "Run linter"
+
+[tasks.install]
+command = "npm install"
+description = "Install dependencies"

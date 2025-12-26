@@ -28,7 +28,7 @@ pro-mgr  # Opens interactive dashboard
 ## 📥 Installation
 
 ```bash
-git clone https://github.com/username/pro-mgr.git
+git clone https://github.com/BeshoyEhab/pro-mgr.git
 cd pro-mgr
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate

@@ -42,6 +42,24 @@ def cli(ctx):
             elif action == "shell":
                 _, project_name = result
                 _print_shell_command(project_name)
+            elif action == "new":
+                _, name, template = result
+                # Create the project
+                try:
+                    proj_result = scaffold.create_project(
+                        name=name,
+                        template=template,
+                        path=".",
+                        init_git_repo=True,
+                        create_venv_env=True,
+                    )
+                    console.print(f"[bold green]✓[/] Created project: {name}")
+                    console.print(f"  📁 Path: {proj_result['path']}")
+                    console.print()
+                    console.print(f"[dim]Run:[/] cd {proj_result['path']} && pro-mgr run {name} test")
+                except Exception as e:
+                    console.print(f"[bold red]Error:[/] {e}")
+                    sys.exit(1)
 
 
 # ============== new Command ==============
@@ -738,6 +756,90 @@ def snip_rm(name: str, confirm: bool):
     else:
         console.print(f"[bold red]Error:[/] Failed to delete snippet")
         sys.exit(1)
+
+
+# ============== config Command Group ==============
+
+@cli.group()
+def config_cmd():
+    """Manage global configuration settings."""
+    pass
+
+
+# Register as 'config' command (avoiding conflict with config module)
+cli.add_command(config_cmd, name="config")
+
+
+@config_cmd.command("list")
+@click.option("--format", "-f", "fmt", type=click.Choice(["table", "json"]), 
+              default="table", help="Output format")
+def config_list(fmt: str):
+    """List all configuration values."""
+    configs = db.get_all_config()
+    
+    if fmt == "json":
+        print(json.dumps(configs, indent=2))
+    else:
+        if not configs:
+            console.print("[dim]No configuration set.[/]")
+            console.print("[dim]Use 'pro-mgr config set <key> <value>' to set values.[/]")
+            console.print()
+            console.print("[bold]Available keys:[/]")
+            console.print("  [cyan]author[/] - Default author name for new projects")
+            console.print("  [cyan]license[/] - Default license (MIT, Apache-2.0, GPL-3.0)")
+            console.print("  [cyan]default_template[/] - Default project template")
+            return
+        
+        table = Table(title="Configuration")
+        table.add_column("Key", style="cyan")
+        table.add_column("Value", style="green")
+        
+        for key, value in configs.items():
+            table.add_row(key, value)
+        
+        console.print(table)
+
+
+@config_cmd.command("get")
+@click.argument("key")
+def config_get(key: str):
+    """Get a configuration value."""
+    value = db.get_config(key)
+    
+    if value is None:
+        console.print(f"[dim]Config '{key}' is not set[/]")
+        sys.exit(1)
+    else:
+        console.print(value)
+
+
+@config_cmd.command("set")
+@click.argument("key")
+@click.argument("value")
+def config_set(key: str, value: str):
+    """
+    Set a configuration value.
+    
+    Common keys:
+    
+        author - Default author name for new projects
+        
+        license - Default license (MIT, Apache-2.0, GPL-3.0)
+        
+        default_template - Default project template
+    """
+    db.set_config(key, value)
+    console.print(f"[bold green]✓[/] Set {key} = {value}")
+
+
+@config_cmd.command("rm")
+@click.argument("key")
+def config_rm(key: str):
+    """Remove a configuration value."""
+    if db.delete_config(key):
+        console.print(f"[bold green]✓[/] Removed config: {key}")
+    else:
+        console.print(f"[dim]Config '{key}' was not set[/]")
 
 
 # ============== Entry Point ==============

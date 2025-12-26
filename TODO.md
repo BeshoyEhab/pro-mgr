@@ -18,31 +18,58 @@
 - [x] Task timeout configuration
 - [x] Fish shell activation fix
 - [x] Shell completions (bash, zsh, fish)
+- [x] `pro-mgr config` command for global settings
+- [x] Node.js template (node-app)
+- [x] Enhanced TUI (new/add project, config, snippets screens)
 
 ---
 
-## 🚧 Future Improvements
+## 🚧 Roadmap to v1.0.0
 
-### High Priority
+### v0.4.0 - Parallel Execution & Templates
 
-- [ ] Add more templates (node-app, rust-cli, go-api)
 - [ ] Parallel task execution
-- [ ] `pro-mgr config` command to set defaults
-
-### Medium Priority
-
-- [ ] Project groups/workspaces
-- [ ] Environment variable management (.env files)
-- [ ] Remote project support (SSH)
+- [ ] Add Rust template (rust-cli)
+- [ ] Add Go template (go-api)
 - [ ] Task output logging to file
-- [ ] Task history and statistics
 
-### Low Priority
+### v0.5.0 - Environment & Configuration
 
-- [ ] Plugin system for custom commands
+- [ ] Environment variable management (.env files)
 - [ ] Config validation command
 - [ ] Export/import project configurations
+
+### v0.6.0 - Project Organization
+
+- [ ] Project groups/workspaces
+- [ ] Project tagging and filtering
+- [ ] Task history and statistics
+
+### v0.7.0 - Remote & Advanced Features
+
+- [ ] Remote project support (SSH)
+- [ ] Project health checks
+- [ ] Dependency graph visualization
+
+### v0.8.0 - Plugin System
+
+- [ ] Plugin system for custom commands
+- [ ] Hook system (pre/post task hooks)
+- [ ] Custom template registry
+
+### v0.9.0 - Polish & Documentation
+
+- [ ] Comprehensive documentation site
+- [ ] Integration with CI/CD platforms
+- [ ] Dockerfile generation for projects
+- [ ] Performance optimizations
+
+### v1.0.0 - Stable Release
+
+- [ ] Full test coverage
+- [ ] API stability guarantees
 - [ ] Web dashboard (optional)
+- [ ] Final bug fixes and polish
 
 ---
 
@@ -52,9 +79,9 @@
 
 ---
 
-## 💡 Ideas
+## 💡 Future Ideas (Post v1.0)
 
-- Integration with CI/CD platforms
-- Dockerfile generation for projects
-- Dependency graph visualization
-- Project health checks
+- Cloud sync for project configurations
+- Team collaboration features
+- IDE extensions (VS Code, JetBrains)
+- Mobile companion app for project monitoring

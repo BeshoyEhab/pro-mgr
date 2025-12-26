@@ -52,6 +52,14 @@ def init_db() -> None:
         )
     """)
     
+    # Create config table for user preferences
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS config (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        )
+    """)
+    
     conn.commit()
     conn.close()
 
@@ -344,6 +352,78 @@ def increment_snippet_usage(name: str) -> None:
     )
     conn.commit()
     conn.close()
+
+
+# ============== Config Operations ==============
+
+def set_config(key: str, value: str) -> None:
+    """
+    Set a configuration value.
+    
+    Args:
+        key: Configuration key (e.g., 'author', 'license', 'default_template')
+        value: Value to set
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT OR REPLACE INTO config (key, value)
+        VALUES (?, ?)
+    """, (key, value))
+    conn.commit()
+    conn.close()
+
+
+def get_config(key: str) -> Optional[str]:
+    """
+    Get a configuration value.
+    
+    Args:
+        key: Configuration key
+    
+    Returns:
+        Value or None if not set
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT value FROM config WHERE key = ?", (key,))
+    row = cursor.fetchone()
+    conn.close()
+    return row['value'] if row else None
+
+
+def get_all_config() -> Dict[str, str]:
+    """
+    Get all configuration values.
+    
+    Returns:
+        Dictionary of key-value pairs
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT key, value FROM config ORDER BY key")
+    rows = cursor.fetchall()
+    conn.close()
+    return {row['key']: row['value'] for row in rows}
+
+
+def delete_config(key: str) -> bool:
+    """
+    Delete a configuration value.
+    
+    Args:
+        key: Configuration key
+    
+    Returns:
+        True if deleted, False if not found
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM config WHERE key = ?", (key,))
+    deleted = cursor.rowcount > 0
+    conn.commit()
+    conn.close()
+    return deleted
 
 
 # Initialize database on module import
