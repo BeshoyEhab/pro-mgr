@@ -284,6 +284,16 @@ complete -c pro-mgr -n "__fish_use_subcommand" -a "run" -d "Run a task for a pro
 complete -c pro-mgr -n "__fish_use_subcommand" -a "shell" -d "Print shell activation command"
 complete -c pro-mgr -n "__fish_use_subcommand" -a "project" -d "Manage registered projects"
 complete -c pro-mgr -n "__fish_use_subcommand" -a "snip" -d "Manage code snippets"
+complete -c pro-mgr -n "__fish_use_subcommand" -a "config" -d "Manage global configuration"
+
+# new command options
+complete -c pro-mgr -n "__fish_seen_subcommand_from new" -s t -l template -d "Project template" -xa "python-cli flask-api django-app node-app dotfiles"
+complete -c pro-mgr -n "__fish_seen_subcommand_from new" -s p -l path -d "Directory to create project in" -ra "(__fish_complete_directories)"
+complete -c pro-mgr -n "__fish_seen_subcommand_from new" -l no-git -d "Skip Git initialization"
+complete -c pro-mgr -n "__fish_seen_subcommand_from new" -l no-venv -d "Skip virtual environment creation"
+complete -c pro-mgr -n "__fish_seen_subcommand_from new" -s a -l author -d "Author name for template"
+complete -c pro-mgr -n "__fish_seen_subcommand_from new" -s l -l license -d "License type" -xa "MIT Apache-2.0 GPL-3.0"
+complete -c pro-mgr -n "__fish_seen_subcommand_from new" -s d -l description -d "Project description"
 
 # project subcommands
 complete -c pro-mgr -n "__fish_seen_subcommand_from project" -a "list" -d "List all projects"
@@ -299,6 +309,12 @@ complete -c pro-mgr -n "__fish_seen_subcommand_from snip" -a "search" -d "Search
 complete -c pro-mgr -n "__fish_seen_subcommand_from snip" -a "show" -d "Show a snippet"
 complete -c pro-mgr -n "__fish_seen_subcommand_from snip" -a "edit" -d "Edit a snippet"
 complete -c pro-mgr -n "__fish_seen_subcommand_from snip" -a "rm" -d "Delete a snippet"
+
+# config subcommands
+complete -c pro-mgr -n "__fish_seen_subcommand_from config" -a "list" -d "List all config values"
+complete -c pro-mgr -n "__fish_seen_subcommand_from config" -a "get" -d "Get a config value"
+complete -c pro-mgr -n "__fish_seen_subcommand_from config" -a "set" -d "Set a config value"
+complete -c pro-mgr -n "__fish_seen_subcommand_from config" -a "rm" -d "Remove a config value"
 EOF
     
     echo -e "${GREEN}  ✓ Fish completions installed${NC}"
